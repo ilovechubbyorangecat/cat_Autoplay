@@ -6,14 +6,13 @@
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
 #include <Geode/ui/Popup.hpp>
 #include <vector>
-#include <deque>
 #include <chrono>
 #include <algorithm>
 
 using namespace geode::prelude;
 
 namespace {
-    constexpr float TICK = 0.25f; // Standard 240 physics steps / sec (1/240 s)
+    constexpr float TICK = 0.25f;
 
     constexpr uint64_t typeBit(GameObjectType type) {
         return 1ull << static_cast<int>(type);
@@ -57,17 +56,15 @@ namespace {
     struct AutoplayController {
         bool active = false;
         bool takeOver = false;
-        int lookaheadHorizon = 80; // Configurable prediction depth
+        int lookaheadHorizon = 80;
         
         int attemptTick = 0;
         bool buttonState = false;
         
-        // Planning & Queues
         std::vector<int> plannedFlips;
         int verifyAtTick = -1;
         int planSafeUntil = -1;
 
-        // Attempt Memory & Learning
         std::vector<std::pair<int, bool>> attemptFlips;
         std::vector<std::pair<int, bool>> knownFlips;
         int knownUntilTick = 0;
@@ -75,7 +72,6 @@ namespace {
         int bestReachedTick = 0;
         std::vector<std::pair<int, bool>> bestFlips;
 
-        // Visuals
         CCLabelBMFont* tagLabel = nullptr;
         CCDrawNode* trailNode = nullptr;
         std::vector<CCPoint> trailPoints;
@@ -100,11 +96,9 @@ namespace {
         }
     } g_autoplay;
 
-    // Forward declarations
     void startAutoplay(PlayLayer* layer);
     void stopAutoplay(PlayLayer* layer);
 
-    // --- Helper Functions ---
     bool isGhost(PlayerObject* p) {
         return p && p == g_ghost.ghost;
     }
@@ -346,7 +340,6 @@ namespace {
             drawAutoplayTrail();
         }
 
-        // Replay known safe inputs
         if (currentTick < g_autoplay.knownUntilTick && g_autoplay.replayIdx < g_autoplay.knownFlips.size()) {
             while (g_autoplay.replayIdx < g_autoplay.knownFlips.size() && 
                    g_autoplay.knownFlips[g_autoplay.replayIdx].first <= currentTick) {
@@ -358,7 +351,6 @@ namespace {
             return;
         }
 
-        // Execute planned inputs
         while (!g_autoplay.plannedFlips.empty() && g_autoplay.plannedFlips.front() <= currentTick) {
             g_autoplay.plannedFlips.erase(g_autoplay.plannedFlips.begin());
             applyAutoplayButton(layer, !g_autoplay.buttonState);
@@ -366,7 +358,6 @@ namespace {
 
         if (currentTick < g_autoplay.verifyAtTick) return;
 
-        // Plan ahead using ghost lookahead
         int horizon = isFlyingMode(p1) ? (g_autoplay.lookaheadHorizon - 20) : g_autoplay.lookaheadHorizon;
         std::vector<int> candidatePlan;
         std::vector<int> bestPlan;
@@ -403,63 +394,58 @@ protected:
         this->setTitle("Autoplay Control");
         auto win = m_mainLayer->getContentSize();
 
-        // 1. Status Indicator
         m_statusLabel = CCLabelBMFont::create("", "bigFont.fnt");
         m_statusLabel->setScale(0.45f);
         m_statusLabel->setPosition({ win.width / 2.f, win.height - 50.f });
         m_mainLayer->addChild(m_statusLabel);
 
-        // 2. Buttons Menu
         auto* menu = CCMenu::create();
         menu->setPosition({ 0.f, 0.f });
         m_mainLayer->addChild(menu);
 
-        // Toggle Autoplay Button
-        m_toggleBtnSprite = ButtonSprite::create("Toggle Autoplay", "goldFont.fnt", "GJ_button_01.png", 0.8f);
+        m_toggleBtnSprite = ButtonSprite::create("Toggle Autoplay");
         auto* toggleBtn = CCMenuItemSpriteExtra::create(
             m_toggleBtnSprite, this, menu_selector(AutoplayMenu::onToggleAutoplay)
         );
         toggleBtn->setPosition({ win.width / 2.f, win.height - 85.f });
         menu->addChild(toggleBtn);
 
-        // Takeover Button
-        m_takeoverBtnSprite = ButtonSprite::create("Takeover: OFF", "bigFont.fnt", "GJ_button_04.png", 0.6f);
+        m_takeoverBtnSprite = ButtonSprite::create("Takeover: OFF");
         auto* takeoverBtn = CCMenuItemSpriteExtra::create(
             m_takeoverBtnSprite, this, menu_selector(AutoplayMenu::onToggleTakeover)
         );
         takeoverBtn->setPosition({ win.width / 2.f - 65.f, win.height - 125.f });
         menu->addChild(takeoverBtn);
 
-        // Clear Memory Button
-        auto* clearMemorySprite = ButtonSprite::create("Reset Memory", "bigFont.fnt", "GJ_button_06.png", 0.6f);
+        auto* clearMemorySprite = ButtonSprite::create("Reset Memory");
         auto* clearBtn = CCMenuItemSpriteExtra::create(
             clearMemorySprite, this, menu_selector(AutoplayMenu::onClearMemory)
         );
         clearBtn->setPosition({ win.width / 2.f + 65.f, win.height - 125.f });
         menu->addChild(clearBtn);
 
-        // 3. Lookahead Horizon Stepper
-        auto* horizonTitle = CCLabelBMFont::create("Lookahead Horizon:", "bigFont.fnt");
+        auto* horizonTitle = CCLabelBMFont::create("Lookahead:", "bigFont.fnt");
         horizonTitle->setScale(0.35f);
         horizonTitle->setPosition({ win.width / 2.f - 40.f, win.height - 160.f });
         m_mainLayer->addChild(horizonTitle);
 
         m_horizonLabel = CCLabelBMFont::create("", "goldFont.fnt");
         m_horizonLabel->setScale(0.45f);
-        m_horizonLabel->setPosition({ win.width / 2.f + 35.f, win.height - 160.f });
+        m_horizonLabel->setPosition({ win.width / 2.f + 25.f, win.height - 160.f });
         m_mainLayer->addChild(m_horizonLabel);
 
-        auto* minusSpr = ButtonSprite::create("-", "bigFont.fnt", "GJ_button_02.png", 0.6f);
+        auto* minusSpr = ButtonSprite::create("-");
+        minusSpr->setScale(0.7f);
         auto* minusBtn = CCMenuItemSpriteExtra::create(minusSpr, this, menu_selector(AutoplayMenu::onHorizonMinus));
-        minusBtn->setPosition({ win.width / 2.f + 70.f, win.height - 160.f });
+        minusBtn->setPosition({ win.width / 2.f + 60.f, win.height - 160.f });
         menu->addChild(minusBtn);
 
-        auto* plusSpr = ButtonSprite::create("+", "bigFont.fnt", "GJ_button_02.png", 0.6f);
+        auto* plusSpr = ButtonSprite::create("+");
+        plusSpr->setScale(0.7f);
         auto* plusBtn = CCMenuItemSpriteExtra::create(plusSpr, this, menu_selector(AutoplayMenu::onHorizonPlus));
-        plusBtn->setPosition({ win.width / 2.f + 95.f, win.height - 160.f });
+        plusBtn->setPosition({ win.width / 2.f + 85.f, win.height - 160.f });
         menu->addChild(plusBtn);
 
-        // 4. Detailed Live Statistics Card
         auto* statsCard = CCScale9Sprite::create("square02_small.png");
         statsCard->setContentSize({ win.width - 40.f, 42.f });
         statsCard->setOpacity(110);
@@ -484,9 +470,8 @@ protected:
     void updateUI() {
         auto* playLayer = GameManager::get()->m_playLayer;
 
-        // Status Label
         if (g_autoplay.active) {
-            m_statusLabel->setString("Status: ACTIVE (Testing Mode)");
+            m_statusLabel->setString("Status: ACTIVE (Test Mode)");
             m_statusLabel->setColor({ 100, 255, 120 });
             m_toggleBtnSprite->setString("Stop Autoplay");
         } else {
@@ -495,23 +480,19 @@ protected:
             m_toggleBtnSprite->setString("Start Autoplay");
         }
 
-        // Takeover label
         m_takeoverBtnSprite->setString(g_autoplay.takeOver ? "Takeover: ON" : "Takeover: OFF");
-
-        // Lookahead label
         m_horizonLabel->setString(fmt::format("{}t", g_autoplay.lookaheadHorizon).c_str());
 
-        // Live stats label
         if (playLayer && playLayer->m_player1) {
             m_statsLabel->setString(fmt::format(
-                "Mode: {}  |  Tick: {}  |  Known Safe: {}t  |  Best: {}t",
+                "Mode: {} | Tick: {} | Known: {}t | Best: {}t",
                 getModeName(playLayer->m_player1),
                 g_autoplay.attemptTick,
                 g_autoplay.knownUntilTick,
                 g_autoplay.bestReachedTick
             ).c_str());
         } else {
-            m_statsLabel->setString("Not currently inside an active level.");
+            m_statsLabel->setString("Open a level to play with Autoplay.");
         }
     }
 
@@ -587,19 +568,17 @@ public:
 //                 HOOKS
 // ==========================================
 
-// Global keyboard hook listening for the backtick ( ` ) key
 class $modify(CCKeyboardDispatcher) {
-    bool dispatchKeyboardMSG(enumKeyCodes key, bool down, bool isKeyRepeat) {
+    void dispatchKeyboardMSG(enumKeyCodes key, bool down, bool isKeyRepeat) {
         if (down && !isKeyRepeat) {
-            // Cocos2d-x KEY_GraveAccent, 0xC0 (Windows OEM 3 / backtick), and GLFW 96
             if (key == enumKeyCodes::KEY_GraveAccent || 
                 key == static_cast<enumKeyCodes>(0xC0) || 
                 key == static_cast<enumKeyCodes>(96)) {
                 AutoplayMenu::toggle();
-                return true;
+                return;
             }
         }
-        return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, isKeyRepeat);
+        CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, isKeyRepeat);
     }
 };
 
@@ -634,7 +613,6 @@ class $modify(PlayLayer) {
                 g_autoplay.bestReachedTick = reached;
                 g_autoplay.bestFlips = g_autoplay.attemptFlips;
             }
-            // Preserve safe inputs up to 30 ticks before failure
             g_autoplay.knownUntilTick = std::max(0, g_autoplay.bestReachedTick - 30);
             g_autoplay.knownFlips.clear();
             for (auto const& f : g_autoplay.bestFlips) {
@@ -678,7 +656,7 @@ class $modify(GJBaseGameLayer) {
     void handleButton(bool down, int button, bool isPlayer1) {
         if (g_autoplay.active && !g_ghost.simulating) {
             if (!g_autoplay.takeOver) {
-                return; // Swallow clicks when takeover mode is off
+                return;
             }
         }
         GJBaseGameLayer::handleButton(down, button, isPlayer1);
