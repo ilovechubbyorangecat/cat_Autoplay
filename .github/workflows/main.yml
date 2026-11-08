@@ -17,6 +17,6 @@ jobs:
       - name: Build the mod
         uses: geode-sdk/build-geode-mod@main
         with:
-          bindings: GeodeSDK/bindings      # ← REQUIRED
-          bindings-ref: main               # ← REQUIRED
+          bindings: geode-sdk/bindings
+          bindings-ref: main
           target: win
