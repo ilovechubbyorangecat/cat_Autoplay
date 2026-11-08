@@ -8,35 +8,30 @@ on:
 
 jobs:
   build:
-    strategy:
-      fail-fast: false
-      matrix:
-        config:
-        - name: Windows
-          os: windows-latest
-
-    name: ${{ matrix.config.name }}
-    runs-on: ${{ matrix.config.os }}
+    name: Build Windows
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build the mod
-        uses: geode-sdk/build-geode-mod@main
+      - name: Install Geode CLI
+        uses: geode-sdk/cli@main
         with:
-          combine: true
-          target: ${{ matrix.config.target }}
+          version: latest
 
-  package:
-    name: Package builds
-    runs-on: ubuntu-latest
-    needs: ['build']
+      - name: Install Geode SDK
+        run: |
+          geode sdk install
+          geode sdk update
 
-    steps:
-      - uses: geode-sdk/build-geode-mod/combine@main
-        id: build
+      - name: Configure and Build
+        run: |
+          cmake -B build -G Ninja `
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo `
+            -DCMAKE_PREFIX_PATH="$env:GEODE_SDK"
+          cmake --build build --config RelWithDebInfo
 
       - uses: actions/upload-artifact@v4
         with:
           name: Build Output
-          path: ${{ steps.build.outputs.build-output }}
+          path: build/*.geode
