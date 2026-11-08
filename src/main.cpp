@@ -6,7 +6,6 @@
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
 #include <Geode/ui/Popup.hpp>
 #include <vector>
-#include <chrono>
 #include <algorithm>
 
 using namespace geode::prelude;
@@ -387,8 +386,8 @@ protected:
     CCLabelBMFont* m_statusLabel = nullptr;
     CCLabelBMFont* m_statsLabel = nullptr;
     CCLabelBMFont* m_horizonLabel = nullptr;
-    ButtonSprite* m_toggleBtnSprite = nullptr;
-    ButtonSprite* m_takeoverBtnSprite = nullptr;
+    CCLabelBMFont* m_toggleBtnLabel = nullptr;
+    CCLabelBMFont* m_takeoverBtnLabel = nullptr;
 
     bool setup() override {
         this->setTitle("Autoplay Control");
@@ -403,16 +402,18 @@ protected:
         menu->setPosition({ 0.f, 0.f });
         m_mainLayer->addChild(menu);
 
-        m_toggleBtnSprite = ButtonSprite::create("Toggle Autoplay");
+        auto* toggleSpr = ButtonSprite::create("Toggle Autoplay");
+        m_toggleBtnLabel = toggleSpr->m_label;
         auto* toggleBtn = CCMenuItemSpriteExtra::create(
-            m_toggleBtnSprite, this, menu_selector(AutoplayMenu::onToggleAutoplay)
+            toggleSpr, this, menu_selector(AutoplayMenu::onToggleAutoplay)
         );
         toggleBtn->setPosition({ win.width / 2.f, win.height - 85.f });
         menu->addChild(toggleBtn);
 
-        m_takeoverBtnSprite = ButtonSprite::create("Takeover: OFF");
+        auto* takeoverSpr = ButtonSprite::create("Takeover: OFF");
+        m_takeoverBtnLabel = takeoverSpr->m_label;
         auto* takeoverBtn = CCMenuItemSpriteExtra::create(
-            m_takeoverBtnSprite, this, menu_selector(AutoplayMenu::onToggleTakeover)
+            takeoverSpr, this, menu_selector(AutoplayMenu::onToggleTakeover)
         );
         takeoverBtn->setPosition({ win.width / 2.f - 65.f, win.height - 125.f });
         menu->addChild(takeoverBtn);
@@ -473,14 +474,16 @@ protected:
         if (g_autoplay.active) {
             m_statusLabel->setString("Status: ACTIVE (Test Mode)");
             m_statusLabel->setColor({ 100, 255, 120 });
-            m_toggleBtnSprite->setString("Stop Autoplay");
+            if (m_toggleBtnLabel) m_toggleBtnLabel->setString("Stop Autoplay");
         } else {
             m_statusLabel->setString("Status: INACTIVE");
             m_statusLabel->setColor({ 255, 120, 120 });
-            m_toggleBtnSprite->setString("Start Autoplay");
+            if (m_toggleBtnLabel) m_toggleBtnLabel->setString("Start Autoplay");
         }
 
-        m_takeoverBtnSprite->setString(g_autoplay.takeOver ? "Takeover: ON" : "Takeover: OFF");
+        if (m_takeoverBtnLabel) {
+            m_takeoverBtnLabel->setString(g_autoplay.takeOver ? "Takeover: ON" : "Takeover: OFF");
+        }
         m_horizonLabel->setString(fmt::format("{}t", g_autoplay.lookaheadHorizon).c_str());
 
         if (playLayer && playLayer->m_player1) {
@@ -537,7 +540,7 @@ public:
 
     static AutoplayMenu* create() {
         auto ret = new AutoplayMenu();
-        if (ret && ret->initAnchored(360.f, 230.f, "GJ_square01.png")) {
+        if (ret && ret->initAnchored(360.f, 230.f)) {
             ret->autorelease();
             return ret;
         }
