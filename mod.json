@@ -1,17 +1,11 @@
 {
-	"geode": "5.11.2",
+	"geode": "4.1.2",
 	"gd": {
-		"win": "2.2081",
-		"android": "2.2081",
-		"mac": "2.2081",
-		"ios": "2.2081"
+		"win": "2.2081"
 	},
 	"id": "indonesiangamer777.autoplay",
 	"name": "Autoplay Mod",
 	"version": "v1.0.0",
 	"developer": "indonesiangamer777",
-	"description": "WOWIE ZOWIE CHEATS!",
-	"dependencies": {
-		"geode.node-ids": ">=v1.23.3"
-	}
+	"description": "WOWIE ZOWIE CHEATS!"
 }
