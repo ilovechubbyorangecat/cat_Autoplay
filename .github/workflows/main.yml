@@ -15,6 +15,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build the mod
-        uses: geode-sdk/build-geode-mod@v1
+        uses: geode-sdk/build-geode-mod@main
         with:
-          target: win
+          platform: win    # ← was "target", now "platform"
