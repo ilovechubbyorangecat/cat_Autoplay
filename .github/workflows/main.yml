@@ -14,22 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Geode CLI
-        uses: geode-sdk/cli@main
-        with:
-          version: latest
+      - name: Setup Geode
+        uses: geode-sdk/setup-geode@main
 
-      - name: Install Geode SDK
-        run: |
-          geode sdk install
-          geode sdk update
-
-      - name: Configure and Build
-        run: |
-          cmake -B build -G Ninja `
-            -DCMAKE_BUILD_TYPE=RelWithDebInfo `
-            -DCMAKE_PREFIX_PATH="$env:GEODE_SDK"
-          cmake --build build --config RelWithDebInfo
+      - name: Build
+        run: geode build
 
       - uses: actions/upload-artifact@v4
         with:
